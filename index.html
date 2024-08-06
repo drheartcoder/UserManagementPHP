@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4">User Management</h1>
+        <form id="userForm" class="mb-4" autocomplete="off">
+            <input type="hidden" id="userId">
+            <div class="row">
+            <div class="form-group col-6">
+                <label for="name">Name:</label>
+                <input type="text" id="name" class="form-control" required autocomplete="new-name">
+            </div>
+            <div class="form-group col-6">
+                <label for="email">Email:</label>
+                <input type="email" id="email" class="form-control" required autocomplete="new-email">
+            </div>
+            <div class="form-group col-6">
+                <label for="password">Password:</label>
+                <input type="password" id="password" class="form-control" required autocomplete="new-password">
+            </div>
+            <div class="form-group col-6">
+                <label for="dob">Date of Birth:</label>
+                <input type="date" id="dob" class="form-control" required autocomplete="off">
+            </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Save User</button>
+        </form>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>DOB</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="userTableBody">
+                <!-- Users will be populated here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script>
+        var localURL = "http://localhost/UserManagementPHP/";
+
+        document.addEventListener("DOMContentLoaded", function() {
+            fetchUsers();
+
+            document.getElementById("userForm").addEventListener("submit", function(e) {
+                e.preventDefault();
+                const id = document.getElementById("userId").value;
+                const name = document.getElementById("name").value;
+                const email = document.getElementById("email").value;
+                const password = document.getElementById("password").value;
+                const dob = document.getElementById("dob").value;
+
+                if (id) {
+                    updateUser(id, {name, email, password, dob});
+                } else {
+                    createUser({name, email, password, dob});
+                }
+            });
+        });
+
+        function fetchUsers() {
+            fetch(localURL+"index.php")
+                .then(response => response.text())
+                .then(text => {
+                    console.log(text);
+                    return JSON.parse(text);
+                })
+                .then(data => {
+                    const userTableBody = document.getElementById("userTableBody");
+                    userTableBody.innerHTML = "";
+                    data.forEach(user => {
+                        userTableBody.innerHTML += `
+                            <tr>
+                                <td>${user.id}</td>
+                                <td>${user.name}</td>
+                                <td>${user.email}</td>
+                                <td>${user.dob}</td>
+                                <td>
+                                    <button class="btn btn-warning btn-sm" onclick="editUser(${user.id})">Edit</button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">Delete</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function createUser(user) {
+            fetch(localURL+"index.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(user)
+            })
+            .then(response => response.text())
+            .then(text => {
+                console.log(text);
+                return JSON.parse(text);
+            })
+            .then(data => {
+                alert(data.message);
+                fetchUsers();
+                document.getElementById("userForm").reset();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function updateUser(id, user) {
+            fetch(localURL+`index.php?id=${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(user)
+            })
+            .then(response => response.text())
+            .then(text => {
+                console.log(text);
+                return JSON.parse(text);
+            })
+            .then(data => {
+                alert(data.message);
+                fetchUsers();
+                document.getElementById("userForm").reset();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function deleteUser(id) {
+            fetch(localURL+`index.php?id=${id}`, {
+                method: "DELETE"
+            })
+            .then(response => response.text())
+            .then(text => {
+                console.log(text);
+                return JSON.parse(text);
+            })
+            .then(data => {
+                alert(data.message);
+                fetchUsers();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function editUser(id) {
+            fetch(localURL+`index.php?id=${id}`)
+                .then(response => response.text())
+                .then(text => {
+                    console.log(text);
+                    return JSON.parse(text);
+                })
+                .then(user => {
+                    document.getElementById("userId").value = user.id;
+                    document.getElementById("name").value = user.name;
+                    document.getElementById("email").value = user.email;
+                    document.getElementById("dob").value = user.dob;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
